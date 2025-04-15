@@ -8,44 +8,20 @@ using GetAddressWebAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .WriteTo.Debug()
-    .Enrich.WithEnvironmentName()
-    .Enrich.WithMachineName()
-    .Enrich.WithEnvironmentUserName()
-    .MinimumLevel.Override("Microsoft.AspNetCore.Hosting", LogEventLevel.Warning)
-    .MinimumLevel.Override("Microsoft.AspNetCore.Mvc", LogEventLevel.Warning)
-    .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning)
-    .CreateLogger();
+builder.Services.AddLogger();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSerilog();
-
-builder.Services.Configure<DaDataOptions>(
-            builder.Configuration.GetSection(DaDataOptions.DaData));
-
-builder.Services.AddHttpClient(DaDataOptions.DaDataClient, client =>
-{
-    var daDataOptions = builder.Configuration.GetSection(DaDataOptions.DaData).Get<DaDataOptions>()
-        ?? throw new ApplicationException("Missing DaData configuration");
-
-    client.BaseAddress = new Uri(daDataOptions.Endpoint);
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.DefaultRequestHeaders.Add("Authorization", $"Token {daDataOptions.AccessKey}");
-    client.DefaultRequestHeaders.Add("X-Secret", daDataOptions.SecretKey);
-});
+builder.Services.AddDaDataService(builder.Configuration);
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IAddressService, AddressService>();
 
-builder.Services.AddScoped<GetAddressHandler>();
+builder.Services.AddHandlers();
 
 builder.Services.AddCors();
 
